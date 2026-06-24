@@ -1,0 +1,1420 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Salsabila IoT Dashboard</title>
+    
+    <!-- Google Fonts Poppins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Tailwind CSS (compiled through Vite using src/index.css) -->
+    <link rel="stylesheet" href="/src/index.css" />
+    
+    <!-- Firebase Compat SDKs (v9.23.0) as requested -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body class="bg-gradient-to-br from-indigo-50/80 via-white to-purple-50/80 dark:bg-none dark:bg-[#070a13] text-gray-800 dark:text-slate-100 min-h-screen transition-colors duration-300 relative">
+    
+    <!-- Ambient Frosted Glass Background Blobs -->
+    <div class="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+      <!-- Top Left Glow -->
+      <div class="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-pink-500/10 dark:bg-pink-600/5 blur-[120px]"></div>
+      <!-- Middle Right Glow -->
+      <div class="absolute top-[30%] right-[-10%] w-[45vw] h-[45vw] rounded-full bg-purple-500/10 dark:bg-purple-600/5 blur-[120px]"></div>
+      <!-- Bottom Left Glow -->
+      <div class="absolute bottom-[-10%] left-[10%] w-[40vw] h-[40vw] rounded-full bg-indigo-500/10 dark:bg-indigo-600/5 blur-[120px]"></div>
+    </div>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full p-4 pointer-events-none"></div>
+
+    <!-- ==================== HALAMAN LOGIN & DAFTAR ==================== -->
+    <div id="login-screen" class="flex flex-col items-center justify-center min-h-screen px-4 py-12 relative overflow-hidden">
+      <!-- Background Glowing Blobs -->
+      <div class="absolute top-1/4 left-1/4 w-72 h-72 bg-pink-500/10 dark:bg-pink-600/5 rounded-full filter blur-3xl pointer-events-none"></div>
+      <div class="absolute bottom-1/4 right-1/4 w-72 h-72 bg-purple-500/10 dark:bg-purple-600/5 rounded-full filter blur-3xl pointer-events-none"></div>
+
+      <!-- Theme Switcher floating on Login -->
+      <div class="absolute top-4 right-4 z-10">
+        <button id="login-theme-toggle" class="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 shadow-md text-gray-500 dark:text-amber-400 hover:scale-105 active:scale-95 transition-all" title="Ubah Tema">
+          <i data-lucide="moon" class="w-5 h-5 hidden dark:block"></i>
+          <i data-lucide="sun" class="w-5 h-5 block dark:hidden"></i>
+        </button>
+      </div>
+
+      <div class="w-full max-w-md bg-white/40 dark:bg-slate-950/40 backdrop-blur-xl border border-white/45 dark:border-white/10 rounded-3xl p-8 shadow-[0_8px_32px_0_rgba(139,92,246,0.08)] dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.35)] relative z-10 transition-all duration-300">
+        <div class="text-center mb-8">
+          <div class="inline-flex p-3 rounded-2xl bg-gradient-to-tr from-pink-500 to-purple-600 text-white shadow-lg shadow-pink-500/20 mb-4 animate-bounce">
+            <i data-lucide="cpu" class="w-8 h-8"></i>
+          </div>
+          <h1 class="text-2xl font-bold tracking-tight bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent">SALSABILA IoT</h1>
+          <p class="text-gray-500 dark:text-slate-400 text-sm mt-1">Sistem Pemantauan & Kontrol Server Realtime</p>
+        </div>
+
+        <!-- Tab switches for Sign In / Sign Up -->
+        <div class="flex bg-white/20 dark:bg-slate-900/40 p-1.5 rounded-2xl mb-6 border border-white/30 dark:border-white/5 backdrop-blur-md">
+          <button id="show-signin-tab" class="flex-1 py-2 text-sm font-semibold rounded-xl bg-white/60 dark:bg-white/10 text-purple-600 dark:text-pink-400 shadow-sm transition-all focus:outline-none">
+            Masuk
+          </button>
+          <button id="show-signup-tab" class="flex-1 py-1.5 text-sm font-medium rounded-xl text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 transition-all focus:outline-none">
+            Daftar Akun
+          </button>
+        </div>
+
+        <!-- EMAIL LOGIN FORM -->
+        <form id="signin-form" class="space-y-4">
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Email Address</label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 pointer-events-none">
+                <i data-lucide="mail" class="w-4 h-4"></i>
+              </span>
+              <input type="email" id="signin-email" placeholder="nama@email.com" required class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-white/30 dark:border-white/5 bg-white/30 dark:bg-slate-900/40 backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-500 dark:focus:ring-pink-500/20 dark:focus:border-pink-500 transition-all text-sm" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Password</label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 pointer-events-none">
+                <i data-lucide="lock" class="w-4 h-4"></i>
+              </span>
+              <input type="password" id="signin-password" placeholder="••••••••" required class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-white/30 dark:border-white/5 bg-white/30 dark:bg-slate-900/40 backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-500 dark:focus:ring-pink-500/20 dark:focus:border-pink-500 transition-all text-sm" />
+            </div>
+          </div>
+
+          <button type="submit" class="w-full py-3 px-4 rounded-xl font-medium bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white text-sm shadow-md shadow-pink-500/10 transition-all hover:shadow-lg active:scale-[0.98] focus:outline-none">
+            Masuk ke Dashboard
+          </button>
+        </form>
+
+        <!-- EMAIL SIGN UP FORM -->
+        <form id="signup-form" class="space-y-4 hidden">
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Email Baru</label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 pointer-events-none">
+                <i data-lucide="mail" class="w-4 h-4"></i>
+              </span>
+              <input type="email" id="signup-email" placeholder="nama@email.com" required class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-white/30 dark:border-white/5 bg-white/30 dark:bg-slate-900/40 backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-500 dark:focus:ring-pink-500/20 dark:focus:border-pink-500 transition-all text-sm" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Buat Password</label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 pointer-events-none">
+                <i data-lucide="lock" class="w-4 h-4"></i>
+              </span>
+              <input type="password" id="signup-password" placeholder="Min. 6 karakter" required class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-white/30 dark:border-white/5 bg-white/30 dark:bg-slate-900/40 backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-500 dark:focus:ring-pink-500/20 dark:focus:border-pink-500 transition-all text-sm" />
+            </div>
+          </div>
+
+          <button type="submit" class="w-full py-3 px-4 rounded-xl font-medium bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white text-sm shadow-md shadow-purple-500/10 transition-all hover:shadow-lg active:scale-[0.98] focus:outline-none">
+            Daftar Akun Baru
+          </button>
+        </form>
+
+        <!-- OAuth Separator -->
+        <div class="relative my-6 text-center">
+          <div class="absolute inset-0 flex items-center"><span class="w-full border-t border-white/20 dark:border-white/5"></span></div>
+          <div class="relative flex justify-center text-[10px] text-gray-400 dark:text-slate-500 uppercase tracking-wider">
+            <span class="bg-white/40 dark:bg-slate-900/40 backdrop-blur-md px-3 py-0.5 rounded-full border border-white/20 dark:border-white/5">Atau masuk dengan</span>
+          </div>
+        </div>
+
+        <!-- Google Login Button -->
+        <button id="google-login-btn" class="w-full py-2.5 px-4 bg-white/30 dark:bg-white/5 hover:bg-white/40 dark:hover:bg-white/10 border border-white/40 dark:border-white/15 rounded-xl text-gray-700 dark:text-slate-200 font-medium text-sm flex items-center justify-center gap-2.5 shadow-sm active:scale-[0.98] transition-all focus:outline-none">
+          <svg class="w-5 h-5" viewBox="0 0 24 24">
+            <path fill="#ea4335" d="M12 5.04c1.62 0 3.08.56 4.22 1.65l3.15-3.15C17.43 1.62 14.88 1 12 1 7.35 1 3.39 3.65 1.5 7.5l3.8 2.95C6.18 7.37 8.89 5.04 12 5.04z"/>
+            <path fill="#4285f4" d="M23.49 12.27c0-.81-.07-1.59-.2-2.34H12v4.43h6.46c-.28 1.48-1.12 2.73-2.38 3.58l3.7 2.87c2.16-1.99 3.41-4.91 3.41-8.54z"/>
+            <path fill="#fbbc05" d="M5.3 14.95a7.14 7.14 0 0 1 0-4.3l-3.8-2.95a11.95 11.95 0 0 0 0 10.2l3.8-2.95z"/>
+            <path fill="#34a853" d="M12 23c3.24 0 5.97-1.07 7.96-2.92l-3.7-2.87c-1.03.69-2.35 1.1-4.26 1.1-3.11 0-5.82-2.33-6.7-5.41l-3.8 2.95C3.39 20.35 7.35 23 12 23z"/>
+          </svg>
+          Google Sign-In
+        </button>
+        
+        <p class="text-center text-xs text-gray-400 dark:text-slate-500 mt-5">
+           IFrame Google Popup: Jika login gagal atau pop-up terblokir, pastikan Anda membuka halaman di Tab Baru.
+        </p>
+      </div>
+    </div>
+
+    <!-- ==================== UTAMA DASHBOARD ==================== -->
+    <div id="dashboard-screen" class="hidden min-h-screen pb-16">
+      
+      <!-- HEADER BAR -->
+      <header class="bg-white/40 dark:bg-slate-950/40 backdrop-blur-xl border-b border-white/40 dark:border-white/5 sticky top-0 z-30 transition-all shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="p-2.5 rounded-xl bg-gradient-to-tr from-pink-500 to-purple-600 text-white shadow-md shadow-pink-500/10">
+              <i data-lucide="cpu" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <h2 class="text-lg font-bold bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent">Salsabila IoT</h2>
+              <div class="flex items-center gap-2 mt-0.5">
+                <span class="inline-flex w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span class="text-[10px] text-emerald-500 font-semibold uppercase tracking-wider">Koneksi Aktif</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Clock and Controls -->
+          <div class="flex items-center gap-4">
+            <div class="hidden md:flex flex-col text-right">
+              <span id="live-clock" class="text-sm font-semibold tracking-wider font-mono">00:00:00 AM</span>
+              <span class="text-[10px] text-gray-400 dark:text-slate-500 font-medium">Sistem Server Lokal</span>
+            </div>
+
+            <!-- Theme Toggle Button -->
+            <button id="dashboard-theme-toggle" class="p-2.5 rounded-xl bg-white/30 dark:bg-white/5 border border-white/40 dark:border-white/10 text-gray-500 dark:text-amber-400 hover:scale-105 active:scale-95 transition-all" title="Ubah Tema">
+              <i data-lucide="moon" class="w-4 h-4 hidden dark:block"></i>
+              <i data-lucide="sun" class="w-4 h-4 block dark:hidden"></i>
+            </button>
+
+            <!-- User profile & Logout -->
+            <div class="flex items-center gap-2 pl-3 border-l border-white/30 dark:border-white/5">
+              <img id="user-avatar" class="w-9 h-9 rounded-xl border border-pink-500/35 object-cover" src="" alt="Profile Image" />
+              <div class="hidden sm:flex flex-col">
+                <span id="user-email" class="text-xs font-semibold text-gray-700 dark:text-slate-300 max-w-[130px] truncate">nama@email.com</span>
+                <span class="text-[9px] text-purple-500 dark:text-pink-400 font-semibold uppercase tracking-wider">Pemilik</span>
+              </div>
+              <button id="logout-btn" class="p-2.5 text-red-500 hover:bg-red-500/10 rounded-xl hover:text-red-600 transition-all focus:outline-none" title="Log Keluar">
+                <i data-lucide="log-out" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- TOP ALERTS & NOTIFICATIONS REGION -->
+      <div id="alert-banner-area" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 hidden">
+        <div class="p-4 bg-amber-500/15 dark:bg-amber-500/10 border border-amber-500/30 dark:border-amber-500/15 text-amber-700 dark:text-amber-300 rounded-3xl flex items-center justify-between gap-3 backdrop-blur-xl shadow-lg shadow-amber-500/5">
+          <div class="flex items-center gap-3">
+            <div class="p-2 bg-amber-500/20 rounded-xl text-amber-655 dark:text-amber-400 leading-none">
+              <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <span class="text-sm font-bold block">AUTO MODE AKTIF</span>
+              <p class="text-xs opacity-90">Suhu terdeteksi tinggi (>= 33°C). Semua sistem relay utama dinyalakan secara otomatis.</p>
+            </div>
+          </div>
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-700 dark:text-amber-300 uppercase tracking-widest animate-pulse h-fit">Suhu Tinggi</span>
+        </div>
+      </div>
+
+      <!-- MAIN LAYOUT WRAPPER -->
+      <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+        
+        <!-- BENTO MAIN GRID -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          
+          <!-- ==================== SECTION 1: MONITOR SENSOR REALTIME ==================== -->
+          <div class="bg-white/40 dark:bg-slate-950/35 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-3xl p-6 shadow-lg shadow-purple-500/5 dark:shadow-black/25 relative overflow-hidden transition-all duration-300">
+            <h3 class="text-sm font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-5 flex items-center gap-2">
+              <i data-lucide="activity" class="w-4 h-4 text-pink-500"></i>
+              Monitoring Sensor Realtime
+            </h3>
+
+            <!-- Realtime Metrics Grid -->
+            <div class="grid grid-cols-2 gap-4">
+              <!-- Temperature Card -->
+              <div class="bg-gradient-to-br from-pink-500/10 to-purple-500/5 dark:from-pink-500/5 dark:to-purple-500/5 border border-white/40 dark:border-white/5 rounded-2xl p-4 flex flex-col justify-between backdrop-blur-md shadow-sm">
+                <div class="flex items-center justify-between">
+                  <div class="p-2 bg-pink-500/10 text-pink-500 rounded-xl">
+                    <i data-lucide="thermometer" class="w-5 h-5"></i>
+                  </div>
+                  <span class="text-[10px] uppercase font-semibold tracking-wider text-pink-500">Suhu</span>
+                </div>
+                <div class="mt-6">
+                  <span id="suhu-val" class="text-4xl font-bold tracking-tight font-mono text-gray-800 dark:text-slate-100">--.-</span>
+                  <span class="text-lg font-semibold text-gray-500 ml-1">°C</span>
+                </div>
+                <div class="flex items-center gap-1.5 mt-2">
+                  <span class="text-[10px] text-gray-400 dark:text-slate-500">Nilai dari Firebase</span>
+                </div>
+              </div>
+
+              <!-- Humidity Card -->
+              <div class="bg-gradient-to-br from-purple-500/10 to-indigo-500/5 dark:from-purple-500/5 dark:to-indigo-500/5 border border-white/40 dark:border-white/5 rounded-2xl p-4 flex flex-col justify-between backdrop-blur-md shadow-sm">
+                <div class="flex items-center justify-between">
+                  <div class="p-2 bg-purple-500/10 text-purple-500 rounded-xl">
+                    <i data-lucide="droplet" class="w-5 h-5"></i>
+                  </div>
+                  <span class="text-[10px] uppercase font-semibold tracking-wider text-purple-500">Kelembapan</span>
+                </div>
+                <div class="mt-6">
+                  <span id="kelembaban-val" class="text-4xl font-bold tracking-tight font-mono text-gray-800 dark:text-slate-100">--</span>
+                  <span class="text-lg font-semibold text-gray-500 ml-1">%</span>
+                </div>
+                <div class="flex items-center gap-1.5 mt-2">
+                  <span class="text-[10px] text-gray-400 dark:text-slate-500">Nilai dari Firebase</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Small indicators -->
+            <div class="mt-4 pt-4 border-t border-white/20 dark:border-white/5 flex items-center justify-between text-xs text-gray-400 dark:text-slate-500">
+              <span id="last-update-time" class="font-medium font-mono">Sinkronisasi terakhir: --:--:--</span>
+              <span class="inline-flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-pink-500 animate-ping"></span>
+                Realtime
+              </span>
+            </div>
+          </div>
+
+          <!-- ==================== SECTION 2: AUTO MODE CONFIGURATION ==================== -->
+          <div class="bg-white/40 dark:bg-slate-950/35 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-3xl p-6 shadow-lg shadow-purple-500/5 dark:shadow-black/25 transition-all duration-300">
+            <h3 class="text-sm font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-5 flex items-center gap-2">
+              <i data-lucide="shield-alert" class="w-4 h-4 text-red-500"></i>
+              Mode Otomatis Suhu
+            </h3>
+
+            <div class="bg-white/20 dark:bg-slate-900/40 p-4 rounded-2xl border border-white/20 dark:border-white/5 mb-6 backdrop-blur-md shadow-sm">
+              <div class="flex items-center justify-between">
+                <div>
+                  <span class="text-sm font-bold block mb-1">Status Fitur Auto Mode</span>
+                  <span class="text-xs text-gray-400 dark:text-slate-500">Aktifkan otomatisasi relay jika suhu memanas</span>
+                </div>
+                
+                <!-- Toggle switch for enabling/disabling auto mode -->
+                <label class="relative inline-flex items-center cursor-pointer select-none">
+                  <input type="checkbox" id="automode-toggle" class="sr-only peer" />
+                  <div class="w-12 h-6 bg-gray-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-pink-500 peer-checked:to-purple-500"></div>
+                </label>
+              </div>
+            </div>
+
+            <!-- Threshold indicator status box -->
+            <div class="space-y-4">
+              <div class="flex items-center gap-3">
+                <div class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-pink-100 dark:bg-pink-950/40 text-pink-500">
+                  <i data-lucide="radio" class="w-4 h-4"></i>
+                </div>
+                <div>
+                  <span class="text-xs font-bold block text-gray-700 dark:text-slate-300">Aturan Pemicu Suhu</span>
+                  <span class="text-xs text-slate-400 block mt-0.5">Jika suhu >= <b class="text-pink-500">33°C</b> → Semua Lampu (Relay 1-4) otomatis <b class="text-emerald-500 uppercase">ON</b></span>
+                </div>
+              </div>
+              </div>
+
+              <!-- Live State Monitor -->
+              <div class="pt-4 border-t border-gray-100 dark:border-slate-800/80">
+                <div id="automode-status-text" class="px-3.5 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 bg-gray-100 text-gray-500 dark:bg-slate-850 dark:text-slate-400 border border-transparent">
+                  <span class="w-2.5 h-2.5 rounded-full bg-gray-400"></span>
+                  Mode Otomatis Nonaktif
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ==================== SECTION 3: MODE ANIMASI (Controls mode) ==================== -->
+          <div class="bg-white/40 dark:bg-slate-950/35 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-3xl p-6 shadow-lg shadow-purple-500/5 dark:shadow-black/25 transition-all duration-300 md:col-span-2 lg:col-span-1">
+            <h3 class="text-sm font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-5 flex items-center gap-2">
+              <i data-lucide="layout-grid" class="w-4 h-4 text-purple-500"></i>
+              Mode Operasi Alat
+            </h3>
+
+            <!-- 3 Mode Buttons -->
+            <div class="space-y-3">
+              <!-- Mode 0 -->
+              <button id="btn-mode-0" class="w-full text-left p-4 rounded-xl border border-white/30 dark:border-white/5 bg-white/10 dark:bg-white/5 hover:bg-white/20 dark:hover:bg-white/10 backdrop-blur-md transition-all flex items-center justify-between group">
+                <div class="flex items-center gap-3">
+                  <div class="p-2.5 rounded-xl bg-white/20 dark:bg-white/5 text-slate-650 dark:text-slate-400 group-hover:scale-105 transition-all">
+                    <i data-lucide="settings" class="w-4 h-4"></i>
+                  </div>
+                  <div>
+                    <span class="text-xs font-bold block text-gray-800 dark:text-slate-200 block">Mode Manual (Mode 0)</span>
+                    <span class="text-[10px] text-gray-400 dark:text-slate-500">Kontrol relay sepenuhnya secara manual</span>
+                  </div>
+                </div>
+                <div class="mode-indicator w-2.5 h-2.5 rounded-full bg-transparent border-2 border-gray-300 dark:border-slate-700"></div>
+              </button>
+
+              <!-- Mode 1 -->
+              <button id="btn-mode-1" class="w-full text-left p-4 rounded-xl border border-white/30 dark:border-white/5 bg-white/10 dark:bg-white/5 hover:bg-white/20 dark:hover:bg-white/10 backdrop-blur-md transition-all flex items-center justify-between group">
+                <div class="flex items-center gap-3">
+                  <div class="p-2.5 rounded-xl bg-white/20 dark:bg-white/5 text-slate-650 dark:text-slate-400 group-hover:scale-105 transition-all">
+                    <i data-lucide="sparkles" class="w-4 h-4"></i>
+                  </div>
+                  <div>
+                    <span class="text-xs font-bold block text-gray-800 dark:text-slate-200 block">Variasi 1 (Mode 1)</span>
+                    <span class="text-[10px] text-gray-400 dark:text-slate-500">Efek animasi berkedip berurutan</span>
+                  </div>
+                </div>
+                <div class="mode-indicator w-2.5 h-2.5 rounded-full bg-transparent border-2 border-gray-300 dark:border-slate-700"></div>
+              </button>
+
+              <!-- Mode 2 -->
+              <button id="btn-mode-2" class="w-full text-left p-4 rounded-xl border border-white/30 dark:border-white/5 bg-white/10 dark:bg-white/5 hover:bg-white/20 dark:hover:bg-white/10 backdrop-blur-md transition-all flex items-center justify-between group">
+                <div class="flex items-center gap-3">
+                  <div class="p-2.5 rounded-xl bg-white/20 dark:bg-white/5 text-slate-650 dark:text-slate-400 group-hover:scale-105 transition-all">
+                    <i data-lucide="zap" class="w-4 h-4"></i>
+                  </div>
+                  <div>
+                    <span class="text-xs font-bold block text-gray-800 dark:text-slate-200 block">Variasi 2 (Mode 2)</span>
+                    <span class="text-[10px] text-gray-400 dark:text-slate-500">Efek animasi bernapas (breathing)</span>
+                  </div>
+                </div>
+                <div class="mode-indicator w-2.5 h-2.5 rounded-full bg-transparent border-2 border-gray-300 dark:border-slate-700"></div>
+              </button>
+            </div>
+          </div>
+
+          <!-- ==================== SECTION 4: KONTROL RELAY (4 BUAH) ==================== -->
+          <div class="bg-white/40 dark:bg-slate-950/35 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-3xl p-6 shadow-lg shadow-purple-500/5 dark:shadow-black/25 transition-all duration-300 md:col-span-2 lg:col-span-2">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-5">
+              <h3 class="text-sm font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                <i data-lucide="toggle-left" class="w-4 h-4 text-purple-500"></i>
+                Kontrol Relay Utama
+              </h3>
+              <div id="relay-lock-badge" class="hidden text-[10px] font-bold bg-pink-500/10 text-pink-500 border border-pink-500/10 rounded-full px-2.5 py-1 whitespace-nowrap animate-pulse">
+                🔐 KONTROL TERKUNCI (ANIME MODE)
+              </div>
+            </div>
+
+            <!-- Relays Card Switches -->
+            <!-- Tombol ALL ON & ALL OFF -->
+            <div id="bulk-relay-controls" class="flex items-center gap-3 mb-5">
+              <button onclick="setAllRelays(true)" class="flex-1 py-3 px-4 rounded-xl text-xs font-bold bg-pink-500 hover:bg-pink-600 text-white shadow-md shadow-pink-500/15 flex items-center justify-center gap-2 active:scale-95 transition-all duration-200 cursor-pointer">
+                <i data-lucide="zap" class="w-4 h-4"></i> Semua ON
+              </button>
+              <button onclick="setAllRelays(false)" class="flex-1 py-3 px-4 rounded-xl text-xs font-bold bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/15 text-gray-800 dark:text-slate-200 border border-transparent flex items-center justify-center gap-2 active:scale-95 transition-all duration-200 cursor-pointer">
+                <i data-lucide="power" class="w-4 h-4"></i> Semua OFF
+              </button>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              
+              <!-- Relay 1 -->
+              <div id="relay-card-1" class="relay-card bg-white/20 dark:bg-white/5 backdrop-blur-md border border-white/20 dark:border-white/5 rounded-2xl p-4 flex items-center justify-between transition-all duration-300">
+                <div class="flex items-center gap-3">
+                  <div class="p-3 bg-white/20 dark:bg-white/5 text-gray-450 rounded-xl relay-icon-box transition-all">
+                    <i data-lucide="lightbulb" class="w-6 h-6"></i>
+                  </div>
+                  <div>
+                    <span class="text-sm font-bold block text-gray-800 dark:text-slate-100">Lampu 1</span>
+                    <span class="text-[10px] text-gray-400 dark:text-slate-500 uppercase tracking-wider font-semibold font-mono relay-status-text">OFF</span>
+                  </div>
+                </div>
+                <button onclick="toggleRelay(1)" class="relay-toggle-btn relative inline-flex items-center cursor-pointer select-none">
+                  <span class="w-12 h-6 bg-gray-200 dark:bg-slate-700 rounded-full transition-all"></span>
+                  <span class="absolute w-5 h-5 bg-white rounded-full left-[2px] transition-all"></span>
+                </button>
+              </div>
+
+              <!-- Relay 2 -->
+              <div id="relay-card-2" class="relay-card bg-white/20 dark:bg-white/5 backdrop-blur-md border border-white/20 dark:border-white/5 rounded-2xl p-4 flex items-center justify-between transition-all duration-300">
+                <div class="flex items-center gap-3">
+                  <div class="p-3 bg-white/20 dark:bg-white/5 text-gray-450 rounded-xl relay-icon-box transition-all">
+                    <i data-lucide="lightbulb" class="w-6 h-6"></i>
+                  </div>
+                  <div>
+                    <span class="text-sm font-bold block text-gray-800 dark:text-slate-100">Lampu 2</span>
+                    <span class="text-[10px] text-gray-400 dark:text-slate-500 uppercase tracking-wider font-semibold font-mono relay-status-text">OFF</span>
+                  </div>
+                </div>
+                <button onclick="toggleRelay(2)" class="relay-toggle-btn relative inline-flex items-center cursor-pointer select-none">
+                  <span class="w-12 h-6 bg-gray-200 dark:bg-slate-700 rounded-full transition-all"></span>
+                  <span class="absolute w-5 h-5 bg-white rounded-full left-[2px] transition-all"></span>
+                </button>
+              </div>
+
+              <!-- Relay 3 -->
+              <div id="relay-card-3" class="relay-card bg-white/20 dark:bg-white/5 backdrop-blur-md border border-white/20 dark:border-white/5 rounded-2xl p-4 flex items-center justify-between transition-all duration-300">
+                <div class="flex items-center gap-3">
+                  <div class="p-3 bg-white/20 dark:bg-white/5 text-gray-450 rounded-xl relay-icon-box transition-all">
+                    <i data-lucide="lightbulb" class="w-6 h-6"></i>
+                  </div>
+                  <div>
+                    <span class="text-sm font-bold block text-gray-800 dark:text-slate-100">Lampu 3</span>
+                    <span class="text-[10px] text-gray-400 dark:text-slate-500 uppercase tracking-wider font-semibold font-mono relay-status-text">OFF</span>
+                  </div>
+                </div>
+                <button onclick="toggleRelay(3)" class="relay-toggle-btn relative inline-flex items-center cursor-pointer select-none">
+                  <span class="w-12 h-6 bg-gray-200 dark:bg-slate-700 rounded-full transition-all"></span>
+                  <span class="absolute w-5 h-5 bg-white rounded-full left-[2px] transition-all"></span>
+                </button>
+              </div>
+
+              <!-- Relay 4 -->
+              <div id="relay-card-4" class="relay-card bg-white/20 dark:bg-white/5 backdrop-blur-md border border-white/20 dark:border-white/5 rounded-2xl p-4 flex items-center justify-between transition-all duration-300">
+                <div class="flex items-center gap-3">
+                  <div class="p-3 bg-white/20 dark:bg-white/5 text-gray-450 rounded-xl relay-icon-box transition-all">
+                    <i data-lucide="lightbulb" class="w-6 h-6"></i>
+                  </div>
+                  <div>
+                    <span class="text-sm font-bold block text-gray-800 dark:text-slate-100">Lampu 4</span>
+                    <span class="text-[10px] text-gray-400 dark:text-slate-500 uppercase tracking-wider font-semibold font-mono relay-status-text">OFF</span>
+                  </div>
+                </div>
+                <button onclick="toggleRelay(4)" class="relay-toggle-btn relative inline-flex items-center cursor-pointer select-none">
+                  <span class="w-12 h-6 bg-gray-200 dark:bg-slate-700 rounded-full transition-all"></span>
+                  <span class="absolute w-5 h-5 bg-white rounded-full left-[2px] transition-all"></span>
+                </button>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- ==================== SECTION 5: PERINTAH SUARA (WEB SPEECH API) ==================== -->
+          <div class="bg-white/40 dark:bg-slate-950/35 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-3xl p-6 shadow-lg shadow-purple-500/5 dark:shadow-black/25 transition-all duration-300">
+            <h3 class="text-sm font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+              <i data-lucide="mic" class="w-4 h-4 text-pink-500"></i>
+              Pemroses Perintah Suara
+            </h3>
+
+            <div class="flex flex-col items-center justify-center p-4 bg-white/20 dark:bg-white/5 border border-white/20 dark:border-white/5 rounded-2xl mb-4 backdrop-blur-md shadow-sm">
+              <!-- Animated Pulse Button -->
+              <button id="mic-toggle-btn" class="w-16 h-16 rounded-full bg-gradient-to-tr from-pink-500 to-purple-600 hover:scale-105 active:scale-[0.98] text-white flex items-center justify-center shadow-lg shadow-pink-500/20 transition-all duration-300 focus:outline-none cursor-pointer">
+                <i data-lucide="mic" id="mic-icon" class="w-6 h-6"></i>
+              </button>
+              <span id="mic-status-label" class="text-xs font-semibold mt-3 text-gray-500 dark:text-slate-400">Tekan mic untuk bicara</span>
+            </div>
+
+            <!-- Terminal Output block -->
+            <div class="bg-slate-950/60 backdrop-blur-md text-[#0ad] font-mono text-xs rounded-2xl p-3.5 h-20 overflow-y-auto mb-4 border border-white/10 leading-relaxed shadow-inner">
+              <span class="text-indigo-400">> </span><span id="voice-transcript">Mendengarkan ucapan...</span>
+            </div>
+
+            <!-- Help Guidelines Accordion-like list -->
+            <div class="space-y-1 bg-white/20 dark:bg-white/5 p-3 rounded-xl border border-white/20 dark:border-white/5 backdrop-blur-md shadow-inner">
+              <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wide block mb-1">Daftar Voice Command (id-ID)</span>
+              <p class="text-[10px] text-gray-500 dark:text-slate-400">🗣️ <code class="font-mono text-pink-500 font-bold">"hidupkan/matikan lampu satu...empat"</code></p>
+              <p class="text-[10px] text-gray-500 dark:text-slate-400">🗣️ <code class="font-mono text-pink-500 font-bold">"hidupkan/matikan semua lampu"</code></p>
+              <p class="text-[10px] text-gray-500 dark:text-slate-400">🗣️ <code class="font-mono text-pink-500 font-bold">"variasi satu / variasi dua"</code></p>
+              <p class="text-[10px] text-gray-500 dark:text-slate-400">🗣️ <code class="font-mono text-pink-500 font-bold">"matikan variasi"</code></p>
+            </div>
+          </div>
+
+          <!-- ==================== SECTION 6: GRAFIK SENSOR REALTIME (Chart.js) ==================== -->
+          <div class="bg-white/40 dark:bg-slate-950/35 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-3xl p-6 shadow-lg shadow-purple-500/5 dark:shadow-black/25 transition-all duration-300 md:col-span-2 lg:col-span-2">
+            <h3 class="text-sm font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-5 flex items-center gap-2">
+              <i data-lucide="line-chart" class="w-4 h-4 text-pink-500"></i>
+              Grafik Histori Sensor Realtime
+            </h3>
+
+            <!-- Chart Box -->
+            <div class="relative h-[280px]">
+              <canvas id="sensorChart"></canvas>
+            </div>
+          </div>
+
+          <!-- ==================== SECTION 7: RIWAYAT DATA SENSOR (Tabel) ==================== -->
+          <div class="bg-white/40 dark:bg-slate-950/35 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-3xl p-6 shadow-lg shadow-purple-500/5 dark:shadow-black/25 transition-all duration-300 md:col-span-2 lg:col-span-1">
+            <h3 class="text-sm font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+              <i data-lucide="history" class="w-4 h-4 text-purple-500"></i>
+              Tabel Riwayat Pembacaan
+            </h3>
+
+            <!-- Responsive Table Box -->
+            <div class="overflow-hidden border border-white/20 dark:border-white/5 rounded-2xl shadow-inner max-h-[260px] overflow-y-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-white/40 dark:bg-slate-900/60 backdrop-blur-md font-bold uppercase tracking-wider text-[10px] text-gray-650 dark:text-slate-400 sticky top-0">
+                  <tr>
+                    <th class="px-4 py-3">Waktu</th>
+                    <th class="px-4 py-3 text-right">Suhu (°C)</th>
+                    <th class="px-4 py-3 text-right">Humid (%)</th>
+                  </tr>
+                </thead>
+                <tbody id="riwayat-table-body" class="divide-y divide-white/10 dark:divide-white/5">
+                  <!-- JS will dynamically rendering row nodes here -->
+                  <tr class="text-center text-gray-400 dark:text-slate-500" id="empty-table-row">
+                    <td colspan="3" class="py-12">Belum ada data masuk...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </main>
+    </div>
+
+    <!-- ==================== WEB APP SCRIPTS ==================== -->
+    <script>
+      // ==========================================
+      // FIREBASE CONFIGURATION
+      // ==========================================
+      const firebaseConfig = {
+        apiKey: "AIzaSyBeTZoLMCn4Xg7kHnpCda57Y02GVtKaBSQ",
+        authDomain: "salsabila-firebase-iot.firebaseapp.com",
+        databaseURL: "https://salsabila-firebase-iot-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "salsabila-firebase-iot",
+        storageBucket: "salsabila-firebase-iot.appspot.com",
+        messagingSenderId: "ISI_DARI_PROJECT_SETTINGS", // GANTI_INI
+        appId: "ISI_DARI_PROJECT_SETTINGS" // GANTI_INI
+      };
+
+      // Initialize Firebase App
+      firebase.initializeApp(firebaseConfig);
+      const auth = firebase.auth();
+      const db = firebase.database();
+
+      // ==========================================
+      // APP LOCAL STATES
+      // ==========================================
+      let listDataPoints = [];
+      let lastSuhuVal = null;
+      let lastHumidVal = null;
+      let syncChartInstance = null;
+      
+      let relay1State = false;
+      let relay2State = false;
+      let relay3State = false;
+      let relay4State = false;
+      let activeMode = 0; // 0 = Manual, 1 = Variasi 1, 2 = Variasi 2
+      let autoModeEnabled = localStorage.getItem('autoModeEnabled') === 'true';
+
+      // ==========================================
+      // THEME & TOAST UTILITIES
+      // ==========================================
+      let isDarkMode = localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+      function showToast(message, type = 'info') {
+        const toastContainer = document.getElementById('toast-container');
+        if (!toastContainer) return;
+
+        const toast = document.createElement('div');
+        toast.className = `p-4 mb-2 rounded-2xl shadow-xl flex items-center gap-3 border transition-all duration-300 transform translate-y-2 opacity-0 pointer-events-auto w-full max-w-sm`;
+        
+        let bgStyle = '';
+        let iconHtml = '';
+        
+        if (type === 'success') {
+          bgStyle = 'bg-emerald-50 dark:bg-emerald-950/95 text-emerald-800 dark:text-emerald-300 border-emerald-100 dark:border-emerald-900';
+          iconHtml = `<i data-lucide="check-circle" class="w-5 h-5 flex-shrink-0 text-emerald-500"></i>`;
+        } else if (type === 'warning') {
+          bgStyle = 'bg-amber-50 dark:bg-amber-955/95 text-amber-800 dark:text-amber-300 border-amber-100 dark:border-amber-900';
+          iconHtml = `<i data-lucide="alert-circle" class="w-5 h-5 flex-shrink-0 text-amber-500"></i>`;
+        } else if (type === 'error') {
+          bgStyle = 'bg-rose-50 dark:bg-rose-955/95 text-rose-800 dark:text-rose-300 border-rose-100 dark:border-rose-900';
+          iconHtml = `<i data-lucide="x-circle" class="w-5 h-5 flex-shrink-0 text-rose-500"></i>`;
+        } else {
+          bgStyle = 'bg-purple-50 dark:bg-slate-800 text-purple-800 dark:text-slate-100 border-purple-100 dark:border-slate-700';
+          iconHtml = `<i data-lucide="bell" class="w-5 h-5 flex-shrink-0 text-purple-500"></i>`;
+        }
+
+        toast.innerHTML = `
+          ${iconHtml}
+          <span class="text-xs font-semibold leading-normal flex-1">${message}</span>
+        `;
+        
+        toast.className += ` ${bgStyle}`;
+        toastContainer.appendChild(toast);
+        lucide.createIcons();
+
+        // Animate inside
+        setTimeout(() => {
+          toast.classList.remove('translate-y-2', 'opacity-0');
+          toast.classList.add('translate-y-0', 'opacity-100');
+        }, 50);
+
+        // Auto remove
+        setTimeout(() => {
+          toast.classList.add('opacity-0', 'translate-y-[-10px]');
+          setTimeout(() => {
+            toast.remove();
+          }, 300);
+        }, 4000);
+      }
+
+      function applyTheme() {
+        if (isDarkMode) {
+          document.documentElement.classList.add('dark');
+          document.body.classList.add('dark');
+          localStorage.setItem('theme', 'dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+          document.body.classList.remove('dark');
+          localStorage.setItem('theme', 'light');
+        }
+        updateChartTheme();
+      }
+
+      function toggleTheme() {
+        isDarkMode = !isDarkMode;
+        applyTheme();
+      }
+
+      document.getElementById('login-theme-toggle').addEventListener('click', toggleTheme);
+      document.getElementById('dashboard-theme-toggle').addEventListener('click', toggleTheme);
+      
+      applyTheme(); // Run theme assessment
+
+      // ==========================================
+      // LIVE CLOCK IN DASHBOARD
+      // ==========================================
+      function startLiveClock() {
+        setInterval(() => {
+          const now = new Date();
+          let hr = now.getHours();
+          let Min = now.getMinutes();
+          let sec = now.getSeconds();
+          let ampm = hr >= 12 ? 'PM' : 'AM';
+          
+          hr = hr % 12;
+          hr = hr ? hr : 12; // 12hr formatting
+          Min = Min < 10 ? '0' + Min : Min;
+          sec = sec < 10 ? '0' + sec : sec;
+          
+          const timeString = `${hr}:${Min}:${sec} ${ampm}`;
+          const clockElem = document.getElementById('live-clock');
+          if (clockElem) clockElem.innerText = timeString;
+        }, 1000);
+      }
+
+      startLiveClock();
+
+      // ==========================================
+      // AUTHENTICATION SCREEN INTERACTIONS
+      // ==========================================
+      const showSignInBtn = document.getElementById('show-signin-tab');
+      const showSignUpBtn = document.getElementById('show-signup-tab');
+      const signInForm = document.getElementById('signin-form');
+      const signUpForm = document.getElementById('signup-form');
+
+      showSignInBtn.addEventListener('click', () => {
+        showSignInBtn.className = "flex-1 py-2 text-sm font-semibold rounded-xl bg-white/60 dark:bg-white/10 text-purple-600 dark:text-pink-400 shadow-sm transition-all focus:outline-none";
+        showSignUpBtn.className = "flex-1 py-1.5 text-sm font-medium rounded-xl text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 transition-all focus:outline-none";
+        signInForm.classList.remove('hidden');
+        signUpForm.classList.add('hidden');
+      });
+
+      showSignUpBtn.addEventListener('click', () => {
+        showSignUpBtn.className = "flex-1 py-2 text-sm font-semibold rounded-xl bg-white/60 dark:bg-white/10 text-purple-600 dark:text-pink-400 shadow-sm transition-all focus:outline-none";
+        showSignInBtn.className = "flex-1 py-1.5 text-sm font-medium rounded-xl text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 transition-all focus:outline-none";
+        signUpForm.classList.remove('hidden');
+        signInForm.classList.add('hidden');
+      });
+
+      // Firebase login action
+      signInForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const email = document.getElementById('signin-email').value;
+        const pass = document.getElementById('signin-password').value;
+        
+        auth.signInWithEmailAndPassword(email, pass)
+          .then(() => {
+            showToast("Login Berhasil! Selamat datang kembail.", "success");
+          })
+          .catch((err) => {
+            showToast(`Gagal Masuk: ${err.message}`, "error");
+          });
+      });
+
+      // Firebase signup action
+      signUpForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const email = document.getElementById('signup-email').value;
+        const pass = document.getElementById('signup-password').value;
+        
+        auth.createUserWithEmailAndPassword(email, pass)
+          .then(() => {
+            showToast("Nomor ID diaktifkan! Akun Anda berhasil dibuat.", "success");
+          })
+          .catch((err) => {
+            showToast(`Gagal Mendaftar: ${err.message}`, "error");
+          });
+      });
+
+      // Google OAuth GoogleAuthProvider implementation
+      document.getElementById('google-login-btn').addEventListener('click', () => {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        auth.signInWithPopup(provider)
+          .then(() => {
+            showToast("Menghubungkan akun Google berhasil!", "success");
+          })
+          .catch((err) => {
+            showToast(`Koneksi Google bermasalah: ${err.message}`, "error");
+          });
+      });
+
+      // Logout handler
+      document.getElementById('logout-btn').addEventListener('click', () => {
+        auth.signOut().then(() => {
+          showToast("Akses dihentikan. Berhasil Logout.", "success");
+        }).catch((err) => {
+          showToast(`Koneksi Error: ${err.message}`, "error");
+        });
+      });
+
+      // ==========================================
+      // INTEGRATED CHART.JS INITIALIZATION
+      // ==========================================
+      function initChart() {
+        const chartCanvas = document.getElementById('sensorChart');
+        if (!chartCanvas) return;
+        const ctx = chartCanvas.getContext('2d');
+        
+        const isDark = document.documentElement.classList.contains('dark');
+        const gridColor = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0,0,0,0.05)';
+        const tickColor = isDark ? '#94a3b8' : '#475569';
+
+        syncChartInstance = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: [], // Timestamps
+            datasets: [
+              {
+                label: 'Suhu (°C)',
+                data: [],
+                borderColor: '#ec4899', // Pink-500
+                backgroundColor: 'rgba(236, 72, 153, 0.08)',
+                yAxisID: 'y_temp',
+                borderWidth: 2.5,
+                tension: 0.35,
+                fill: true,
+                pointBackgroundColor: '#ec4899',
+                pointHoverRadius: 6
+              },
+              {
+                label: 'Kelembapan (%)',
+                data: [],
+                borderColor: '#8b5cf6', // Purple-500
+                backgroundColor: 'rgba(139, 92, 246, 0.08)',
+                yAxisID: 'y_humidity',
+                borderWidth: 2.5,
+                tension: 0.35,
+                fill: true,
+                pointBackgroundColor: '#8b5cf6', pointHoverRadius: 6
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                labels: {
+                  font: { family: 'Poppins', size: 11, weight: '500' },
+                  color: tickColor
+                }
+              }
+            },
+            scales: {
+              x: {
+                grid: { display: false },
+                ticks: { color: tickColor, font: { family: 'Poppins', size: 9 } }
+              },
+              y_temp: {
+                type: 'linear',
+                position: 'left',
+                min: 0,
+                max: 100,
+                grid: { color: gridColor },
+                title: { display: true, text: 'Suhu (°C)', color: '#ec4899', font: { family: 'Poppins', size: 10, weight: '600' } },
+                ticks: { color: tickColor }
+              },
+              y_humidity: {
+                type: 'linear',
+                position: 'right',
+                min: 0,
+                max: 100,
+                grid: { display: false },
+                title: { display: true, text: 'Kelembapan (%)', color: '#8b5cf6', font: { family: 'Poppins', size: 10, weight: '600' } },
+                ticks: { color: tickColor }
+              }
+            }
+          }
+        });
+      }
+
+      function updateChartTheme() {
+        if (!syncChartInstance) return;
+        const isDark = document.documentElement.classList.contains('dark');
+        const gridColor = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0,0,0,0.05)';
+        const tickColor = isDark ? '#94a3b8' : '#475569';
+
+        syncChartInstance.options.plugins.legend.labels.color = tickColor;
+        syncChartInstance.options.scales.x.ticks.color = tickColor;
+        syncChartInstance.options.scales.y_temp.ticks.color = tickColor;
+        syncChartInstance.options.scales.y_temp.grid.color = gridColor;
+        syncChartInstance.options.scales.y_humidity.ticks.color = tickColor;
+        
+        syncChartInstance.update();
+      }
+
+      // ==========================================
+      // REALTIME DATABASE INTEGRATION (COMPAT SDK)
+      // ==========================================
+      let databaseListeners = [];
+
+      function attachDatabaseListeners() {
+        // Suhu listener
+        const suhuRef = db.ref('/sensor/suhu');
+        suhuRef.on('value', (snap) => {
+          const val = snap.val();
+          if (val !== null) {
+            lastSuhuVal = parseFloat(val);
+            document.getElementById('suhu-val').innerText = lastSuhuVal.toFixed(1);
+            registerSensorUpdate();
+            assessAutoModeRule();
+          }
+        });
+        databaseListeners.push({ ref: suhuRef, event: 'value' });
+
+        // Kelembapan listener
+        const kelebRef = db.ref('/sensor/kelembaban');
+        kelebRef.on('value', (snap) => {
+          const val = snap.val();
+          if (val !== null) {
+            lastHumidVal = parseFloat(val);
+            document.getElementById('kelembaban-val').innerText = lastHumidVal;
+            registerSensorUpdate();
+          }
+        });
+        databaseListeners.push({ ref: kelebRef, event: 'value' });
+
+        // Relay 1 listener
+        const r1Ref = db.ref('/controls/relay1');
+        r1Ref.on('value', (snap) => {
+          const val = snap.val();
+          if (val !== null) {
+            const prevState = relay1State;
+            relay1State = !!val;
+            updateRelayUI(1, relay1State);
+            if (prevState !== relay1State) {
+              showToast(`Lampu 1 diubah menjadi ${relay1State ? 'ON' : 'OFF'}`, 'info');
+            }
+          }
+        });
+        databaseListeners.push({ ref: r1Ref, event: 'value' });
+
+        // Relay 2 listener
+        const r2Ref = db.ref('/controls/relay2');
+        r2Ref.on('value', (snap) => {
+          const val = snap.val();
+          if (val !== null) {
+            const prevState = relay2State;
+            relay2State = !!val;
+            updateRelayUI(2, relay2State);
+            if (prevState !== relay2State) {
+              showToast(`Lampu 2 diubah menjadi ${relay2State ? 'ON' : 'OFF'}`, 'info');
+            }
+          }
+        });
+        databaseListeners.push({ ref: r2Ref, event: 'value' });
+
+        // Relay 3 listener
+        const r3Ref = db.ref('/controls/relay3');
+        r3Ref.on('value', (snap) => {
+          const val = snap.val();
+          if (val !== null) {
+            const prevState = relay3State;
+            relay3State = !!val;
+            updateRelayUI(3, relay3State);
+            if (prevState !== relay3State) {
+              showToast(`Lampu 3 diubah menjadi ${relay3State ? 'ON' : 'OFF'}`, 'info');
+            }
+          }
+        });
+        databaseListeners.push({ ref: r3Ref, event: 'value' });
+
+        // Relay 4 listener
+        const r4Ref = db.ref('/controls/relay4');
+        r4Ref.on('value', (snap) => {
+          const val = snap.val();
+          if (val !== null) {
+            const prevState = relay4State;
+            relay4State = !!val;
+            updateRelayUI(4, relay4State);
+            if (prevState !== relay4State) {
+              showToast(`Lampu 4 diubah menjadi ${relay4State ? 'ON' : 'OFF'}`, 'info');
+            }
+          }
+        });
+        databaseListeners.push({ ref: r4Ref, event: 'value' });
+
+        // Mode listener
+        const modeRef = db.ref('/controls/mode');
+        modeRef.on('value', (snap) => {
+          const val = snap.val();
+          if (val !== null) {
+            activeMode = parseInt(val);
+            updateModeUI(activeMode);
+          }
+        });
+        databaseListeners.push({ ref: modeRef, event: 'value' });
+      }
+
+      function detachDatabaseListeners() {
+        databaseListeners.forEach((item) => {
+          item.ref.off(item.event);
+        });
+        databaseListeners = [];
+      }
+
+      // ==========================================
+      // MANAGE UI UPDATES & SYNC
+      // ==========================================
+      function updateRelayUI(num, isActive) {
+        const card = document.getElementById(`relay-card-${num}`);
+        if (!card) return;
+        
+        const dotButton = card.querySelector('.relay-toggle-btn');
+        const statusSpan = card.querySelector('.relay-status-text');
+        const iconBox = card.querySelector('.relay-icon-box');
+
+        if (isActive) {
+          card.className = `relay-card bg-white/50 dark:bg-slate-900/60 backdrop-blur-md border border-pink-500/30 dark:border-pink-500/20 shadow-lg shadow-pink-500/10 rounded-2xl p-4 flex items-center justify-between transition-all duration-300 ring-2 ring-pink-500/20`;
+          iconBox.className = `p-3 bg-pink-500/10 text-pink-500 rounded-xl relay-icon-box transition-all scale-110`;
+          statusSpan.innerText = 'ON';
+          statusSpan.className = 'text-[10px] text-pink-500 uppercase tracking-wider font-semibold font-mono relay-status-text';
+          
+          dotButton.querySelector('span:first-child').className = 'w-12 h-6 rounded-full transition-all bg-gradient-to-r from-pink-500 to-purple-500';
+          dotButton.querySelector('span:last-child').className = 'absolute w-5 h-5 bg-white rounded-full left-[26px] shadow transition-all';
+        } else {
+          card.className = `relay-card bg-white/20 dark:bg-white/5 backdrop-blur-md border border-white/20 dark:border-white/5 rounded-2xl p-4 flex items-center justify-between transition-all duration-300`;
+          iconBox.className = `p-3 bg-white/20 dark:bg-white/5 text-gray-400 rounded-xl relay-icon-box transition-all`;
+          statusSpan.innerText = 'OFF';
+          statusSpan.className = 'text-[10px] text-gray-400 dark:text-slate-500 uppercase tracking-wider font-semibold font-mono relay-status-text';
+          
+          dotButton.querySelector('span:first-child').className = 'w-12 h-6 rounded-full transition-all bg-gray-200 dark:bg-slate-700';
+          dotButton.querySelector('span:last-child').className = 'absolute w-5 h-5 bg-white rounded-full left-[2px] transition-all';
+        }
+      }
+
+      function updateModeUI(modeVal) {
+        // Clear all active styling
+        const modeButtons = [0, 1, 2].map(m => document.getElementById(`btn-mode-${m}`));
+        
+        modeButtons.forEach((btn, idx) => {
+          if (!btn) return;
+          const indicator = btn.querySelector('.mode-indicator');
+          const prefixBox = btn.querySelector('div.flex-shrink-0') || btn.querySelector('div > div');
+          const spans = btn.querySelectorAll('span');
+          const titleSpan = spans[0];
+          const descSpan = spans[1];
+
+          if (idx === modeVal) {
+            // Active Mode Theme styling (Gradient fill)
+            btn.className = `w-full text-left p-4 rounded-xl border border-pink-500/40 bg-gradient-to-tr from-pink-500/40 via-purple-500/40 to-purple-600/40 backdrop-blur-md text-white shadow-xl shadow-purple-500/10 scale-[1.01] transition-all flex items-center justify-between group`;
+            if (indicator) indicator.className = `mode-indicator w-3 h-3 rounded-full bg-white animate-pulse`;
+            if (prefixBox) prefixBox.className = `p-2.5 rounded-xl bg-white/20 text-white transition-all`;
+            if (titleSpan) titleSpan.className = "text-xs font-bold block text-white";
+            if (descSpan) descSpan.className = "text-[10px] text-white/80";
+          } else {
+            // Normal neutral states
+            btn.className = `w-full text-left p-4 rounded-xl border border-white/30 dark:border-white/5 bg-white/10 dark:bg-white/5 hover:bg-white/20 dark:hover:bg-white/10 backdrop-blur-md transition-all flex items-center justify-between group`;
+            if (indicator) indicator.className = `mode-indicator w-2.5 h-2.5 rounded-full bg-transparent border-2 border-white/30 dark:border-white/10`;
+            if (prefixBox) prefixBox.className = `p-2.5 rounded-xl bg-white/20 dark:bg-white/5 text-slate-500 dark:text-slate-400 group-hover:scale-105 transition-all`;
+            if (titleSpan) titleSpan.className = "text-xs font-bold block text-gray-800 dark:text-slate-205";
+            if (descSpan) descSpan.className = "text-[10px] text-gray-400 dark:text-slate-500";
+          }
+        });
+
+        const relayCards = document.querySelectorAll('.relay-card');
+        const badgeSpan = document.getElementById('relay-lock-badge');
+
+        if (modeVal === 1 || modeVal === 2) {
+          // Disable relay cards
+          if (badgeSpan) badgeSpan.classList.remove('hidden');
+          relayCards.forEach((card) => {
+            card.classList.add('opacity-50', 'pointer-events-none');
+          });
+        } else {
+          // Enable relay cards
+          if (badgeSpan) badgeSpan.classList.add('hidden');
+          relayCards.forEach((card) => {
+            card.classList.remove('opacity-50', 'pointer-events-none');
+          });
+        }
+      }
+
+      // Relay writers
+      function toggleRelay(num) {
+        if (activeMode !== 0) {
+          showToast("Aksi Ditolak: Relay dikunci ketika Mode Animasi / Variasi aktif!", "warning");
+          return;
+        }
+
+        let targetVal = false;
+        if (num === 1) targetVal = !relay1State;
+        if (num === 2) targetVal = !relay2State;
+        if (num === 3) targetVal = !relay3State;
+        if (num === 4) targetVal = !relay4State;
+
+        db.ref(`/controls/relay${num}`).set(targetVal);
+      }
+
+      // Bulk Relay operations (Semua ON / Semua OFF)
+      function setAllRelays(state) {
+        if (activeMode !== 0) {
+          showToast("Aksi Ditolak: Relay dikunci ketika Mode Animasi / Variasi aktif!", "warning");
+          return;
+        }
+
+        const updates = {
+          '/controls/relay1': state,
+          '/controls/relay2': state,
+          '/controls/relay3': state,
+          '/controls/relay4': state
+        };
+
+        db.ref().update(updates)
+          .then(() => {
+            showToast(`Semua Relay berhasil diubah menjadi ${state ? 'ON' : 'OFF'}`, 'success');
+          })
+          .catch((err) => {
+            showToast(`Gagal merubah Relay: ${err.message}`, 'error');
+          });
+      }
+
+      // Mode writers
+      function setMode(modeVal) {
+        db.ref(`/controls/mode`).set(parseInt(modeVal))
+          .then(() => {
+            showToast(`Mengaktifkan mode baru: ${modeVal === 0 ? 'Manual' : 'Variasi ' + modeVal}`, 'success');
+          })
+          .catch((err) => {
+            showToast(`Gagal merubah mode: ${err.message}`, 'error');
+          });
+      }
+
+      document.getElementById('btn-mode-0').addEventListener('click', () => setMode(0));
+      document.getElementById('btn-mode-1').addEventListener('click', () => setMode(1));
+      document.getElementById('btn-mode-2').addEventListener('click', () => setMode(2));
+
+      // ==========================================
+      // AUTOMATIC TEMP-TRIGGER CONTROLLER
+      // ==========================================
+      const autoModeCheckbox = document.getElementById('automode-toggle');
+
+      // Initialize checkbox status state
+      autoModeCheckbox.checked = autoModeEnabled;
+      
+      autoModeCheckbox.addEventListener('change', (e) => {
+        autoModeEnabled = e.target.checked;
+        localStorage.setItem('autoModeEnabled', autoModeEnabled.toString());
+        showToast(`Mode Otomatis Suhu telah ${autoModeEnabled ? 'DIALIRKAN' : 'DINONAKTIFKAN'}`, 'info');
+        assessAutoModeRule();
+      });
+
+      function assessAutoModeRule() {
+        const textBlock = document.getElementById('automode-status-text');
+        const alertBanner = document.getElementById('alert-banner-area');
+        
+        if (!textBlock) return;
+
+        if (!autoModeEnabled) {
+          textBlock.className = "px-3.5 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 bg-white/10 dark:bg-white/5 text-gray-500 dark:text-slate-450 border border-white/20 dark:border-white/5 backdrop-blur-md";
+          textBlock.innerHTML = `<span class="w-2.5 h-2.5 rounded-full bg-gray-400"></span> Mode Otomatis Nonaktif`;
+          alertBanner.classList.add('hidden');
+          return;
+        }
+
+        if (lastSuhuVal === null) {
+          textBlock.className = "px-3.5 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 bg-yellow-500/15 dark:bg-yellow-500/10 text-yellow-650 dark:text-yellow-405 border border-yellow-500/35 dark:border-yellow-500/15 backdrop-blur-md";
+          textBlock.innerHTML = `<span class="w-2.5 h-2.5 rounded-full bg-yellow-500 animate-pulse"></span> Menunggu data sensor...`;
+          alertBanner.classList.add('hidden');
+          return;
+        }
+
+        if (lastSuhuVal >= 33.0) {
+          textBlock.className = "px-3.5 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 bg-emerald-500/15 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-350 border border-emerald-500/35 dark:border-emerald-500/15 animate-pulse backdrop-blur-md";
+          textBlock.innerHTML = `<span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> AUTO MODE AKTIF (Suhu ${lastSuhuVal.toFixed(1)}°C)`;
+          alertBanner.classList.remove('hidden');
+
+          // Trigger relays ON if not all are ON
+          if (!relay1State || !relay2State || !relay3State || !relay4State) {
+            db.ref('/controls/relay1').set(true);
+            db.ref('/controls/relay2').set(true);
+            db.ref('/controls/relay3').set(true);
+            db.ref('/controls/relay4').set(true);
+            showToast("⚠️ Pemicu Suhu Tinggi Terlampaui! Semua Relay diaktifkan.", "success");
+          }
+        } else {
+          textBlock.className = "px-3.5 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 bg-purple-500/15 dark:bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/35 dark:border-purple-500/15 backdrop-blur-md";
+          textBlock.innerHTML = `<span class="w-2.5 h-2.5 rounded-full bg-purple-550 animate-pulse"></span> Siaga - Menunggu suhu >= 33°C (Suhu saat ini: ${lastSuhuVal.toFixed(1)}°C)`;
+          alertBanner.classList.add('hidden');
+        }
+      }
+
+      // ==========================================
+      // RECORDING HISTORY TABLE AND CHART APPS
+      // ==========================================
+      let listPembacaanLocal = [];
+      let lastLoggedMinutes = -1;
+
+      function registerSensorUpdate() {
+        if (lastSuhuVal === null || lastHumidVal === null) return;
+        
+        const now = new Date();
+        const hr = now.getHours().toString().padStart(2, '0');
+        const min = now.getMinutes().toString().padStart(2, '0');
+        const sec = now.getSeconds().toString().padStart(2, '0');
+        
+        const currentSecond = now.getSeconds();
+        const currentTimeString = `${hr}:${min}:${sec}`;
+
+        // Ensure we stamp the UI timing log
+        document.getElementById('last-update-time').innerText = `Sinkronisasi terakhir: ${currentTimeString}`;
+
+        // Log data points into Chart & Table history. 
+        // We log whenever values change, or at least spacing of 3 seconds to avoid grid clutter.
+        const lastEntry = listPembacaanLocal[0];
+        const isDuplicate = lastEntry && lastEntry.suhu === lastSuhuVal && lastEntry.kelembapan === lastHumidVal;
+        
+        if (!isDuplicate) {
+          listPembacaanLocal.unshift({
+            waktu: currentTimeString,
+            suhu: lastSuhuVal,
+            kelembapan: lastHumidVal
+          });
+
+          if (listPembacaanLocal.length > 20) {
+            listPembacaanLocal.pop();
+          }
+
+          renderHistoryTable();
+          addPointToChart(currentTimeString, lastSuhuVal, lastHumidVal);
+        }
+      }
+
+      function renderHistoryTable() {
+        const body = document.getElementById('riwayat-table-body');
+        if (!body) return;
+
+        if (listPembacaanLocal.length === 0) {
+          body.innerHTML = `
+            <tr class="text-center text-gray-400 dark:text-slate-500" id="empty-table-row">
+              <td colspan="3" class="py-12">Belum ada data masuk...</td>
+            </tr>
+          `;
+          return;
+        }
+
+        body.innerHTML = '';
+        const displayData = listPembacaanLocal.slice(0, 10); // Display of 10 rows ONLY
+        
+        displayData.forEach((row, index) => {
+          const tableRow = document.createElement('tr');
+          tableRow.className = "hover:bg-gray-100/50 dark:hover:bg-slate-800/40 transition-colors duration-150 border-b border-gray-100/60 dark:border-slate-800/40";
+          tableRow.innerHTML = `
+            <td class="px-4 py-2.5 font-mono text-[10px] text-gray-600 dark:text-slate-400">${row.waktu}</td>
+            <td class="px-4 py-2.5 text-right font-medium text-pink-500 font-mono">${row.suhu.toFixed(1)}°C</td>
+            <td class="px-4 py-2.5 text-right font-medium text-purple-500 font-mono">${row.kelembapan}%</td>
+          `;
+          body.appendChild(tableRow);
+        });
+      }
+
+      function addPointToChart(timeString, tempVal, humVal) {
+        if (!syncChartInstance) return;
+
+        syncChartInstance.data.labels.push(timeString);
+        syncChartInstance.data.datasets[0].data.push(tempVal);
+        syncChartInstance.data.datasets[1].data.push(humVal);
+
+        if (syncChartInstance.data.labels.length > 20) {
+          syncChartInstance.data.labels.shift();
+          syncChartInstance.data.datasets[0].data.shift();
+          syncChartInstance.data.datasets[1].data.shift();
+        }
+
+        syncChartInstance.update('none'); // Update without full animations triggers to preserve performance
+      }
+
+      // ==========================================
+      // SPEECH RECOGNITION (Web Speech API)
+      // ==========================================
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      let speechRecognizer = null;
+      let micListening = false;
+
+      if (SpeechRecognition) {
+        speechRecognizer = new SpeechRecognition();
+        speechRecognizer.continuous = false;
+        speechRecognizer.interimResults = false;
+        speechRecognizer.lang = 'id-ID';
+
+        speechRecognizer.onstart = () => {
+          micListening = true;
+          updateMicButtonState();
+        };
+
+        speechRecognizer.onerror = (e) => {
+          showToast(`Sistem suara gagal: ${e.error}. Pastikan mikrofon disetujui.`, 'error');
+          console.error(e);
+          micListening = false;
+          updateMicButtonState();
+        };
+
+        speechRecognizer.onend = () => {
+          micListening = false;
+          updateMicButtonState();
+        };
+
+        speechRecognizer.onresult = (event) => {
+          const rawSpeech = event.results[0][0].transcript;
+          document.getElementById('voice-transcript').innerText = `"${rawSpeech}"`;
+          matchVoiceCommands(rawSpeech);
+        };
+      }
+
+      function updateMicButtonState() {
+        const btn = document.getElementById('mic-toggle-btn');
+        const icon = document.getElementById('mic-icon');
+        const label = document.getElementById('mic-status-label');
+
+        if (micListening) {
+          btn.className = "w-16 h-16 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-lg shadow-red-500/30 animate-pulse transition-all focus:outline-none cursor-pointer";
+          icon.className = "w-6 h-6 animate-bounce";
+          label.innerText = "Mendengarkan ucapan...";
+          label.className = "text-xs font-bold mt-3 text-red-500 animate-pulse";
+        } else {
+          btn.className = "w-16 h-16 rounded-full bg-gradient-to-tr from-pink-500 to-purple-600 hover:scale-105 active:scale-[0.98] text-white flex items-center justify-center shadow-lg shadow-pink-500/20 transition-all focus:outline-none cursor-pointer";
+          icon.className = "w-6 h-6";
+          label.innerText = "Tekan mic untuk bicara";
+          label.className = "text-xs font-semibold mt-3 text-gray-500 dark:text-slate-400";
+        }
+      }
+
+      // Mic trigger event
+      document.getElementById('mic-toggle-btn').addEventListener('click', () => {
+        if (!speechRecognizer) {
+          showToast("Aplikasi Google Chrome diperlukan untuk menjalankan Speech Recognition.", "error");
+          return;
+        }
+
+        if (micListening) {
+          speechRecognizer.stop();
+        } else {
+          // Speak recognition request
+          document.getElementById('voice-transcript').innerText = "Mendengarkan ucapan...";
+          try {
+            speechRecognizer.start();
+          } catch(e) {
+            console.error(e);
+          }
+        }
+      });
+
+      function matchVoiceCommands(speechText) {
+        const text = speechText.toLowerCase().trim();
+        let solved = false;
+        let speechAction = "";
+
+        if (text.includes("hidupkan semua lampu") || text.includes("nyalakan semua lampu")) {
+          db.ref('/controls/relay1').set(true);
+          db.ref('/controls/relay2').set(true);
+          db.ref('/controls/relay3').set(true);
+          db.ref('/controls/relay4').set(true);
+          speechAction = "Hidupkan semua lampu";
+          solved = true;
+        } else if (text.includes("matikan semua lampu")) {
+          db.ref('/controls/relay1').set(false);
+          db.ref('/controls/relay2').set(false);
+          db.ref('/controls/relay3').set(false);
+          db.ref('/controls/relay4').set(false);
+          speechAction = "Matikan semua lampu";
+          solved = true;
+        } else if (text.includes("hidupkan") || text.includes("nyalakan")) {
+          if (text.includes("satu") || text.includes("1")) {
+            db.ref('/controls/relay1').set(true);
+            speechAction = "Hidupkan Lampu 1";
+            solved = true;
+          } else if (text.includes("dua") || text.includes("2")) {
+            db.ref('/controls/relay2').set(true);
+            speechAction = "Hidupkan Lampu 2";
+            solved = true;
+          } else if (text.includes("tiga") || text.includes("3")) {
+            db.ref('/controls/relay3').set(true);
+            speechAction = "Hidupkan Lampu 3";
+            solved = true;
+          } else if (text.includes("empat") || text.includes("4")) {
+            db.ref('/controls/relay4').set(true);
+            speechAction = "Hidupkan Lampu 4";
+            solved = true;
+          }
+        } else if (text.includes("matikan")) {
+          if (text.includes("satu") || text.includes("1")) {
+            db.ref('/controls/relay1').set(false);
+            speechAction = "Matikan Lampu 1";
+            solved = true;
+          } else if (text.includes("dua") || text.includes("2")) {
+            db.ref('/controls/relay2').set(false);
+            speechAction = "Matikan Lampu 2";
+            solved = true;
+          } else if (text.includes("tiga") || text.includes("3")) {
+            db.ref('/controls/relay3').set(false);
+            speechAction = "Matikan Lampu 3";
+            solved = true;
+          } else if (text.includes("empat") || text.includes("4")) {
+            db.ref('/controls/relay4').set(false);
+            speechAction = "Matikan Lampu 4";
+            solved = true;
+          } else if (text.includes("variasi")) {
+            db.ref('/controls/mode').set(0);
+            speechAction = "Matikan Variasi";
+            solved = true;
+          }
+        } else if (text.includes("variasi")) {
+          if (text.includes("satu") || text.includes("1")) {
+            db.ref('/controls/mode').set(1);
+            speechAction = "Variasi Satu (Mode 1)";
+            solved = true;
+          } else if (text.includes("dua") || text.includes("2")) {
+            db.ref('/controls/mode').set(2);
+            speechAction = "Variasi Dua (Mode 2)";
+            solved = true;
+          }
+        }
+
+        if (solved) {
+          showToast(`Suara Dikenali: "${speechAction}"`, "success");
+        } else {
+          showToast(`Gagal: Perintah "${speechText}" tidak cocok di database`, "warning");
+        }
+      }
+
+      // ==========================================
+      // INTEGRATED CLIENT WORKSPACE DISPATCHER
+      // ==========================================
+      let isFirstSyncLoad = true;
+
+      auth.onAuthStateChanged((user) => {
+        const loginSection = document.getElementById('login-screen');
+        const dashboardSection = document.getElementById('dashboard-screen');
+
+        if (user) {
+          loginSection.classList.add('hidden');
+          dashboardSection.classList.remove('hidden');
+
+          // Print user profile parameters
+          document.getElementById('user-email').innerText = user.email;
+          document.getElementById('user-avatar').src = user.photoURL || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.email)}`;
+
+          if (isFirstSyncLoad) {
+            showToast(`Koneksi disinkronkan: ${user.email}`, "success");
+            isFirstSyncLoad = false;
+          }
+
+          // Initialize Dashboard Systems
+          initChart();
+          attachDatabaseListeners();
+          lucide.createIcons();
+        } else {
+          loginSection.classList.remove('hidden');
+          dashboardSection.classList.add('hidden');
+          isFirstSyncLoad = true;
+          detachDatabaseListeners();
+          lucide.createIcons();
+        }
+      });
+      
+    </script>
+  </body>
+</html>
